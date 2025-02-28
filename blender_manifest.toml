@@ -1,0 +1,30 @@
+schema_version = "1.0.0"
+
+id = "Render_from_Terminal"
+version = "0.1.0"
+name = "Render from Terminal"
+tagline = "Create script to launch render from terminal"
+maintainer = "nukkio <nukkiogm@gmail.com>"
+type = "add-on"
+website = "https://extensions.blender.org/add-ons/render-from-terminal/"
+
+tags = ["Render", "Pipeline"]
+
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+copyright = [
+  "2025-2030 nukkio",
+]
+[permissions]
+files = "Create script to render from terminal"
+
+
+
+
+
+
+
+
