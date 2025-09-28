@@ -115,6 +115,12 @@ Enable override
 Like the "Output path" field in the "Output" panel, if empty uses the project setting
 - **Override overwrite** + **Overwrite**\
 With "Override overwrite" selected it allows you to choose whether to overwrite the renders or not
+- **Override placeholder** + **Placeholder**\
+With "Override placeholder" selected it allows you to choose whether to create placeholder or not.\
+
+> **Note for multiple PCs or parallel sessions**	
+> If the script needs to be run on multiple computers or from different sessions (terminals) on the same computer, it is best to uncheck "overwrite" and check "placeholder" to avoid the same frame being rendered multiple times, even if these options are set differently in the project.\
+
 - **Render Engine**\
 Choosing which render engine to use:\
 	- Default (as set in the project)
