@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "Render_from_Terminal"
-version = "0.1.0"
+version = "0.1.2"
 name = "Render from Terminal"
 tagline = "Create script to launch render from terminal"
 maintainer = "nukkio <nukkiogm@gmail.com>"
@@ -20,11 +20,3 @@ copyright = [
 ]
 [permissions]
 files = "Create script to render from terminal"
-
-
-
-
-
-
-
-
