@@ -123,6 +123,16 @@ class RFT_Settings(bpy.types.PropertyGroup):
 		default=False,
 		description="Overwrite existing files while rendering",
 	)
+	rft_or_placeholder: bpy.props.BoolProperty(
+		name="Override placeholder",
+		default=False,
+		description="Override placeholder option",
+	)
+	rft_or_placeholdervalue: bpy.props.BoolProperty(
+		name="placeholder",
+		default=True,
+		description="Create empty placeholder files while rendering frames (similar to Unix 'touch')",
+	)
 	rft_or_renderengine:bpy.props.EnumProperty(
 		name="Render Engine",
 		description="Engine to use for rendering",
@@ -209,7 +219,7 @@ class RFT_Settings(bpy.types.PropertyGroup):
 #	)
 
 class RFT_OT_writescript(bpy.types.Operator):
-	bl_idname = "rft.writescript"
+	bl_idname = "render.writescript"
 	bl_label = "Write script"
 	bl_description = "Writes the script file to the same folder as the open project"
 	bl_options = {'REGISTER'}
@@ -451,11 +461,19 @@ class RFT_OT_writescript(bpy.types.Operator):
 			strScript+="REM max samples for Cycles and samples for Eevee"+"\n"
 			strScript+="set scene="+str(rftsettings.rft_or_scene)+"\n"
 			strScript+="REM empty: value from .blend file"+"\n"
+
 			if rftsettings.rft_or_overwrite==False:
 				strScript+="set overwrite="+"\n"
 			else:
 				strScript+="set overwrite="+str(rftsettings.rft_or_overwritevalue)+"\n"
 			strScript+="REM empty: value from .blend file"+"\n"
+
+			if rftsettings.rft_or_placeholder==False:
+				strScript+="set placeholder="+"\n"
+			else:
+				strScript+="set placeholder="+str(rftsettings.rft_or_placeholdervalue)+"\n"
+			strScript+="REM empty: value from .blend file"+"\n"
+
 			strScript+="set pythonfile="+rftsettings.rft_comm_python+"\n"
 			strScript+="REM .py file"+"\n"
 		strScript+=""+"\n"
@@ -479,6 +497,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 				strScript+="\"%rendqual%\", " 
 				strScript+="\"%scene%\", " 
 				strScript+="\"%overwrite%\", " 
+				strScript+="\"%placeholder%\", " 
 				strScript+="\"%pythonfile%\" " 
 				strScript+=""+"\n"
 			else:
@@ -491,6 +510,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 				strScript+="\"%rendqual%\", " 
 				strScript+="\"%scene%\", " 
 				strScript+="\"%overwrite%\", " 
+				strScript+="\"%placeholder%\", " 
 				strScript+="\"%pythonfile%\" " 
 				strScript+=""+"\n"
 			if rftsettings.rft_comm_end!="":
@@ -591,7 +611,8 @@ class RFT_OT_writescript(bpy.types.Operator):
 		strScript+="set renderQuality=%~5"+"\n"
 		strScript+="set scene=%~6"+"\n"
 		strScript+="set renderoverwrite=%~7"+"\n"
-		strScript+="set pythonfile=%~8"+"\n"
+		strScript+="set renderplaceholder=%~8"+"\n"
+		strScript+="set pythonfile=%~9"+"\n"
 ##########################################		
 		strScript+="set strscene="+"\n"
 		strScript+="IF NOT [%scene%]==[] set strscene=-S %scene%"+"\n"
@@ -605,6 +626,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 		strScript+="IF NOT [%renderEngine%]==[] set pythonexpr=%pythonexpr% scn.render.engine='%renderEngine%'; "+"\n"
 		strScript+="IF %renderQuality% GTR 0 set pythonexpr=%pythonexpr% scn.cycles.samples=%$renderQuality%; scn.eevee.taa_render_samples=%renderQuality%; "+"\n"
 		strScript+="IF NOT [%renderoverwrite%]==[] set pythonexpr=%pythonexpr% scn.render.use_overwrite=%renderoverwrite%; "+"\n"
+		strScript+="IF NOT [%renderplaceholder%]==[] set pythonexpr=%pythonexpr% scn.render.use_placeholder=%renderplaceholder%; "+"\n"
 
 #		strScript+="set comm=\"%blenderPath% -b \\\"%file%\\\" -x 1 %strscene% %strimage% --python-expr \\\"%pythonexpr%\\\" -f %curframe%\""+"\n"
 		if rftsettings.rft_comm_pre!="":
@@ -676,7 +698,8 @@ class RFT_OT_writescript(bpy.types.Operator):
 		strScript+="\trenderQuality=$5"+"\n"
 		strScript+="\tscene=$6"+"\n"
 		strScript+="\trenderoverwrite=$7"+"\n"
-		strScript+="\tpythonfile=$8"+"\n"
+		strScript+="\trenderplaceholder=$8"+"\n"
+		strScript+="\tpythonfile=$9"+"\n"
 		
 		strScript+="\tstrscene=\"\""+"\n"
 		strScript+="\tif [ ! -z \"$scene\" -a \"$scene\"!=\"\" ]; then"+"\n"
@@ -754,9 +777,15 @@ class RFT_OT_writescript(bpy.types.Operator):
 		strScript+="\t\tpythonexpr=\"${pythonexpr}scn.cycles.samples=\"$renderQuality\"; \""+"\n"
 		strScript+="\t\tpythonexpr=\"${pythonexpr}scn.eevee.taa_render_samples=\"$renderQuality\"; \""+"\n"
 		strScript+="\tfi"+"\n"
+		
 		strScript+="\tif [ ! -z \"$renderoverwrite\" -a \"$renderoverwrite\"!=\"\" ]; then"+"\n"
 		strScript+="\t\tpythonexpr=\"${pythonexpr}scn.render.use_overwrite=$renderoverwrite; \""+"\n"
 		strScript+="\tfi"+"\n"
+
+		strScript+="\tif [ ! -z \"$renderplaceholder\" -a \"$renderplaceholder\"!=\"\" ]; then"+"\n"
+		strScript+="\t\tpythonexpr=\"${pythonexpr}scn.render.use_placeholder=$renderplaceholder; \""+"\n"
+		strScript+="\tfi"+"\n"
+
 		strScript+="\tcomm=\"$blenderPath -b \\\"$file\\\" -x 1 $strscene $strimage --python-expr \\\"$pythonexpr\\\" $strpython -f $curframe\""+"\n"
 		if rftsettings.rft_comm_pre!="":
 			strScript+="\t"+rftsettings.rft_comm_pre+" \"$file\" \"$imagename\""+"\n"
@@ -806,11 +835,19 @@ class RFT_OT_writescript(bpy.types.Operator):
 			strScript+="#max samples for Cycles and samples for Eevee"+"\n"
 			strScript+="scene=\""+str(rftsettings.rft_or_scene)+"\""+"\n"
 			strScript+="#empty: value from .blend file"+"\n"
+
 			if rftsettings.rft_or_overwrite==False:
 				strScript+="overwrite=\"\""+"\n"
 			else:
 				strScript+="overwrite=\""+str(rftsettings.rft_or_overwritevalue)+"\""+"\n"
 			strScript+="#empty: value from .blend file"+"\n"
+
+			if rftsettings.rft_or_placeholder==False:
+				strScript+="placeholder=\"\""+"\n"
+			else:
+				strScript+="placeholder=\""+str(rftsettings.rft_or_placeholdervalue)+"\""+"\n"
+			strScript+="#empty: value from .blend file"+"\n"
+
 			strScript+="pythonfile=\""+rftsettings.rft_comm_python+"\""+"\n"
 			strScript+="#.py file"+"\n"
 		strScript+=""+"\n"
@@ -836,6 +873,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 				strScript+="\"$rendqual\" " 
 				strScript+="\"$scene\" " 
 				strScript+="\"$overwrite\" " 
+				strScript+="\"$placeholder\" " 
 				strScript+="\"$pythonfile\" " 
 				strScript+=""+"\n"
 			else:
@@ -848,6 +886,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 				strScript+="\"$rendqual\" " 
 				strScript+="\"$scene\" " 
 				strScript+="\"$overwrite\" " 
+				strScript+="\"$placeholder\" " 
 				strScript+="\"$pythonfile\" " 
 				strScript+=""+"\n"
 			if rftsettings.rft_comm_end!="":
@@ -994,6 +1033,7 @@ class RFT_PT_panel(bpy.types.Panel):
 		row.prop(rftsettings, "rft_or_filename")
 		row.active=rftsettings.rft_or_enabled==True
 		row.enabled=rftsettings.rft_or_enabled==True
+		
 		row = box.row()
 		split = row.split(factor=0.5)
 		col_1 = split.column(align=True)
@@ -1004,6 +1044,18 @@ class RFT_PT_panel(bpy.types.Panel):
 		row2.prop(rftsettings, "rft_or_overwritevalue")
 		row2.active=rftsettings.rft_or_overwrite==True
 		row2.enabled=rftsettings.rft_or_overwrite==True
+		row.active=rftsettings.rft_or_enabled==True
+		row.enabled=rftsettings.rft_or_enabled==True
+		row = box.row()
+		split = row.split(factor=0.5)
+		col_1 = split.column(align=True)
+		col_2 = split.column(align=True)
+		row1 = col_1.row()
+		row2 = col_2.row()
+		row1.prop(rftsettings, "rft_or_placeholder")
+		row2.prop(rftsettings, "rft_or_placeholdervalue")
+		row2.active=rftsettings.rft_or_placeholder==True
+		row2.enabled=rftsettings.rft_or_placeholder==True
 		row.active=rftsettings.rft_or_enabled==True
 		row.enabled=rftsettings.rft_or_enabled==True
 		row = box.row()
@@ -1033,7 +1085,7 @@ class RFT_PT_panel(bpy.types.Panel):
 		row.prop(rftsettings, "rft_writeSH")
 		row.prop(rftsettings, "rft_writeBAT")
 		row = box.row()
-		row.operator("rft.writescript", icon="VIEW_CAMERA")
+		row.operator("render.writescript", icon="VIEW_CAMERA")
 		row.active=rftsettings.rft_writeSH==True or rftsettings.rft_writeBAT==True
 		row.enabled=rftsettings.rft_writeSH==True or rftsettings.rft_writeBAT==True
 
@@ -1114,5 +1166,4 @@ def unregister():
 
 if __name__ == "__main__":
 	register()
-
 
