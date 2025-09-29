@@ -533,6 +533,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 				strScript+="\"%rendqual%\", " 
 				strScript+="\"%scene%\", " 
 				strScript+="\"%overwrite%\", " 
+				strScript+="\"%placeholder%\", " 
 				strScript+="\"%pythonfile%\" " 
 				strScript+=""+"\n"
 				if rftsettings.rft_comm_end!="":
@@ -551,6 +552,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 					strScript+="\"%rendqual%\", " 
 					strScript+="\"%scene%\", " 
 					strScript+="\"%overwrite%\", " 
+					strScript+="\"%placeholder%\", " 
 					strScript+="\"%pythonfile%\" " 
 					strScript+=""+"\n"
 				if rftsettings.rft_comm_end!="":
@@ -909,6 +911,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 				strScript+="\"$rendqual\" " 
 				strScript+="\"$scene\" " 
 				strScript+="\"$overwrite\" " 
+				strScript+="\"$placeholder\" " 
 				strScript+="\"$pythonfile\" " 
 				strScript+=""+"\n"
 				if rftsettings.rft_comm_end!="":
@@ -927,6 +930,7 @@ class RFT_OT_writescript(bpy.types.Operator):
 					strScript+="\"$rendqual\" " 
 					strScript+="\"$scene\" " 
 					strScript+="\"$overwrite\" " 
+					strScript+="\"$placeholder\" " 
 					strScript+="\"$pythonfile\" " 
 					strScript+=""+"\n"
 				if rftsettings.rft_comm_end!="":
