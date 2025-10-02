@@ -162,6 +162,18 @@ class RFT_Settings(bpy.types.PropertyGroup):
 		default = ""
 	)
 	
+	rft_prs_enableParallelRender: bpy.props.BoolProperty(
+		name="Enable multi instances render",
+		default=False,
+		description="Launch multiple Blender render commands"+"\nWarning: many commands will be run with the settings indicated above, so be aware of possible incompatibilities."+"\n"+"For example with \"animation as singles\" and \"new call each render\" selected:"+"\n"+"many instances would be launched to render only one frame at a time, therefore uselessly."+"\n"+"If you enable multiple renders, it's best to deselect \"overwrite\" and select \"placeholder\" in ovveride values or directly in the project, to avoid rendering the same frame multiple times."+"\n"+"Multiple renders are useless if you only render a single frame."+"\n"+"Use with caution!",
+	)
+	rft_prs_numberParallelRender: bpy.props.IntProperty(
+		name = "Render session",
+		description="how many render commands to launch",
+		default=2,
+		min=2
+	)
+	
 #	rft_cameras=[]
 #	rft_fixingactive: bpy.props.BoolProperty(
 #		name="fixing",
@@ -633,7 +645,15 @@ class RFT_OT_writescript(bpy.types.Operator):
 #		strScript+="set comm=\"%blenderPath% -b \\\"%file%\\\" -x 1 %strscene% %strimage% --python-expr \\\"%pythonexpr%\\\" -f %curframe%\""+"\n"
 		if rftsettings.rft_comm_pre!="":
 			strScript+=rftsettings.rft_comm_pre+" \"%file%\" \"%imagename%\""+"\n"
-		strScript+="CALL \"%blenderPath%\" -b \"%file%\" -x 1 %strscene% %strimage% --python-expr \"%pythonexpr%\" %strpython% -f %curframe%"+"\n"
+
+#		strScript+="CALL \"%blenderPath%\" -b \"%file%\" -x 1 %strscene% %strimage% --python-expr \"%pythonexpr%\" %strpython% -f %curframe%"+"\n"
+
+		if rftsettings.rft_prs_enableParallelRender==True and rftsettings.rft_prs_numberParallelRender>1:
+			for i in range(rftsettings.rft_prs_numberParallelRender):
+				strScript+="START \"render "+str(i+1)+"\" \"%blenderPath%\" -b \"%file%\" -x 1 %strscene% %strimage% --python-expr \"%pythonexpr%\" %strpython% -f %curframe%"+"\n"
+		else:
+			strScript+="CALL \"%blenderPath%\" -b \"%file%\" -x 1 %strscene% %strimage% --python-expr \"%pythonexpr%\" %strpython% -f %curframe%"+"\n"
+
 		if rftsettings.rft_comm_post!="":
 			strScript+=rftsettings.rft_comm_post+" \"%file%\" \"%imagename%\""+"\n"
 		
@@ -791,7 +811,22 @@ class RFT_OT_writescript(bpy.types.Operator):
 		strScript+="\tcomm=\"$blenderPath -b \\\"$file\\\" -x 1 $strscene $strimage --python-expr \\\"$pythonexpr\\\" $strpython -f $curframe\""+"\n"
 		if rftsettings.rft_comm_pre!="":
 			strScript+="\t"+rftsettings.rft_comm_pre+" \"$file\" \"$imagename\""+"\n"
-		strScript+="\teval $comm"+"\n"
+#		strScript+="\teval $comm"+"\n"
+		
+#		rftsettings.rft_prs_numberParallelRender=3
+		if rftsettings.rft_prs_enableParallelRender==True and rftsettings.rft_prs_numberParallelRender>1:
+			for i in range(rftsettings.rft_prs_numberParallelRender):
+#				strScript+="\teval $comm &"+"\n"
+#				strScript+="\t$blenderPath -b \\\"$file\\\" -x 1 $strscene $strimage --python-expr \\\"$pythonexpr\\\" $strpython -f $curframe\""+"\n"
+				strScript+="\t$blenderPath -b \"$file\" -x 1 $strscene $strimage --python-expr \"$pythonexpr\" $strpython -f $curframe &"+"\n"
+			strScript+="\twait"+"\n"
+		else:
+			strScript+="\teval $comm"+"\n"
+		
+#		eval $comm &
+#		eval $comm &
+#		wait
+		
 		if rftsettings.rft_comm_post!="":
 			strScript+="\t"+rftsettings.rft_comm_post+" \"$file\" \"$imagename\""+"\n"
 		
@@ -860,6 +895,8 @@ class RFT_OT_writescript(bpy.types.Operator):
 		
 		allframes=""
 		
+		strScript+="millsecStart=$(date +%s%3N) "+"\n"
+		
 		if rftsettings.rft_animationdefault==True and rftsettings.rft_onlycurrent==False:
 			strScript+="datarender=$(date +\"%Y%m%d_%H-%M\") "+"\n"
 			allframes=str(scn.frame_start)+".."+str(scn.frame_end)
@@ -920,6 +957,8 @@ class RFT_OT_writescript(bpy.types.Operator):
 			else:
 				if rftsettings.rft_comm_start!="":
 					strScript+=rftsettings.rft_comm_start+"\n"
+#				print("************************")
+#				print(arframes)
 				for i in arframes:
 					strScript+="datarender=$(date +\"%Y%m%d_%H-%M\") "+"\n"
 					strScript+="startrender "
@@ -935,6 +974,11 @@ class RFT_OT_writescript(bpy.types.Operator):
 					strScript+=""+"\n"
 				if rftsettings.rft_comm_end!="":
 					strScript+=rftsettings.rft_comm_end+"\n"
+
+		strScript+="millsecEnd=$(date +%s%3N) "+"\n"
+		strScript+="duration=$((millsecEnd-millsecStart)) "+"\n"
+		strScript+="durationn=$(expr $millsecEnd - $millsecStart) "+"\n"
+		strScript+="echo \"**** render milliseconds = $duration ($durationn)\" "+"\n"
 
 		strScript+="\n"
 		strScript+="msg \"end\"\n"
@@ -1066,6 +1110,7 @@ class RFT_PT_panel(bpy.types.Panel):
 		row.prop(rftsettings, "rft_or_renderengine", expand=False)
 		row.active=rftsettings.rft_or_enabled==True
 		row.enabled=rftsettings.rft_or_enabled==True
+		
 		row = box.row()
 		split = row.split(factor=0.5)
 		col_1 = split.column(align=True)
@@ -1081,6 +1126,38 @@ class RFT_PT_panel(bpy.types.Panel):
 		row.active=rftsettings.rft_or_enabled==True
 		row.enabled=rftsettings.rft_or_enabled==True
 
+		box = layout.box()
+		row = box.row()
+		row.label(text="Multi instances render")
+		row.prop(rftsettings, "rft_prs_enableParallelRender")
+		
+#		row =  box.row()
+#		row.label(text="Warning: many commands will be run with the settings indicated above, so be aware of possible incompatibilities.")
+#		row =  box.row()
+#		row.label(text="If you enable multiple renders, it's best to deselect \"overwrite\" and select \"placeholder\" in ovveride values, to avoid rendering the same frame multiple times.")
+#		row =  box.row()
+#		row.label(text="Multiple renders are useless if you only render a single frame.")
+		'''
+		"Warning: many commands will be run with the settings indicated above, so be aware of possible incompatibilities."
+		"If you enable multiple renders, it's best to deselect \"overwrite\" and select \"placeholder\" in ovveride values, to avoid rendering the same frame multiple times."
+		"Multiple renders are useless if you only render a single frame."
+		'''
+		
+		row = box.row()
+		row.prop(rftsettings, "rft_prs_numberParallelRender")
+		row.active=rftsettings.rft_prs_enableParallelRender==True
+		row.enabled=rftsettings.rft_prs_enableParallelRender==True
+
+#		row = box.row()
+#		split = row.split(factor=0.5)
+#		col_1 = split.column(align=True)
+#		col_2 = split.column(align=True)
+#		row1 = col_1.row()
+#		row2 = col_2.row()
+#		row1.prop(rftsettings, "rft_prs_enableParallelRender")
+#		row2.prop(rftsettings, "rft_prs_numberParallelRender")
+#		row2.active=rftsettings.rft_prs_enableParallelRender==True
+#		row2.enabled=rftsettings.rft_prs_enableParallelRender==True
 
 		box = layout.box()
 		row = box.row()
