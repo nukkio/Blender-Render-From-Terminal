@@ -815,13 +815,27 @@ class RFT_OT_writescript(bpy.types.Operator):
 		
 #		rftsettings.rft_prs_numberParallelRender=3
 		if rftsettings.rft_prs_enableParallelRender==True and rftsettings.rft_prs_numberParallelRender>1:
+
+			####method 1 simple, not ctrl-c
+#			for i in range(rftsettings.rft_prs_numberParallelRender):
+#				strScript+="\t$blenderPath -b \"$file\" -x 1 $strscene $strimage --python-expr \"$pythonexpr\" $strpython -f $curframe &"+"\n"
+#			strScript+="\twait"+"\n"
+			####
+
+			####method 2, ok for ctrl-c
+			strScript+="\t("+"\n"
+			strScript+="\ttrap 'kill 0' SIGINT; \\"+"\n"
 			for i in range(rftsettings.rft_prs_numberParallelRender):
-#				strScript+="\teval $comm &"+"\n"
-#				strScript+="\t$blenderPath -b \\\"$file\\\" -x 1 $strscene $strimage --python-expr \\\"$pythonexpr\\\" $strpython -f $curframe\""+"\n"
-				strScript+="\t$blenderPath -b \"$file\" -x 1 $strscene $strimage --python-expr \"$pythonexpr\" $strpython -f $curframe &"+"\n"
-			strScript+="\twait"+"\n"
+				strScript+="\t$blenderPath -b \"$file\" -x 1 $strscene $strimage --python-expr \"$pythonexpr\" $strpython -f $curframe & \\"+"\n"
+			strScript+="\twait \\"+"\n"
+			strScript+="\t)"+"\n"
+			####
+
 		else:
-			strScript+="\teval $comm"+"\n"
+			#eval
+#			#strScript+="\teval $comm"+"\n"
+			#command
+			strScript+="\t$blenderPath -b \"$file\" -x 1 $strscene $strimage --python-expr \"$pythonexpr\" $strpython -f $curframe "+"\n"
 		
 #		eval $comm &
 #		eval $comm &
